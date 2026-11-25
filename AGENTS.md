@@ -32,6 +32,14 @@
 - Свойства из `userData` доступны напрямую на объекте (`obj.health`), а не через `obj.userData.health`. Имена не должны совпадать с базовыми (`x`, `type` и т.п.).
 - Спрайты при необходимости перерисовывать в `tools/gen_assets.js` и перезапускать генератор.
 
+## Репозиторий и деплой
+- GitHub: https://github.com/kennygomel/iden-game (public).
+- Pages: `build_type: legacy`, ветка `main`, корень `/` → https://kennygomel.github.io/iden-game/.
+  Пересобирается автоматически при пуше в `main`.
+- Пуш: в локальном git config задан `core.sshCommand = C:/Windows/System32/OpenSSH/ssh.exe`,
+  потому что встроенный ssh Git for Windows не читает путь профиля с кириллицей.
+  Без этого — `git -c core.sshCommand=... push`.
+
 ## Тест
 1. `node tools/serve.js` (порт 8080).
 2. Открыть в браузере, консоль должна быть пустой.
