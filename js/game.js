@@ -121,8 +121,8 @@ function defaultState() {
     energy: 3, energyMax: 3,
     businesses: [], loans: [], log: [],
     stats: { opened: 0, failed: 0, videos: 0, maxMoney: 500000 },
-    lastFailDay: -99, lastViral: -99, todayAd: 0, todayUpkeep: 0,
-    videoBudget: 100000, videoMonth: 0, videoCount: 0,
+    lastFailDay: -99, lastViral: -99, todayAd: 0, todayUpkeep: 0, todaySubs: 0,
+    videoMonth: 0, videoCount: 0,
     modal: null, speed: 1, frame: 0, lock: false,
     toasts: [], achieves: {}, over: null, catScroll: 0
   };
@@ -136,7 +136,7 @@ function saveGame() {
       skillPts: S.skillPts, skills: S.skills, energy: S.energy, energyMax: S.energyMax,
       businesses: S.businesses, loans: S.loans, log: S.log.slice(0, 40),
       stats: S.stats, lastFailDay: S.lastFailDay, lastViral: S.lastViral,
-      videoBudget: S.videoBudget, videoMonth: S.videoMonth, videoCount: S.videoCount,
+      videoMonth: S.videoMonth, videoCount: S.videoCount,
       achieves: S.achieves
     }));
   } catch (e) {}
@@ -278,12 +278,16 @@ function dayTick() {
     S.money += profit; biz.today = profit; biz.total += profit;
   }
 
-  // --- блог: доход с рекламы ---
+  // --- блог: подписчики растут равномерно, сами по себе ---
+  var subsGain = subsPerDay();
+  addSubs(subsGain); S.todaySubs = subsGain;
+
+  // --- доход с рекламы ---
   var ad = Math.floor(S.subs * 0.012 * (1 + 0.08 * S.skills.charisma));
   S.money += ad; S.todayAd = ad;
 
   // --- личные расходы блогера (жизнь тоже стоит денег) ---
-  var upkeep = 1500 + Math.floor(S.subs * 0.01);
+  var upkeep = 1000 + Math.floor(S.subs * 0.005);
   S.money -= upkeep; S.todayUpkeep = upkeep;
 
   // --- кредиты: проценты платятся каждый день; нет денег — капитализируются в долг ---
@@ -355,7 +359,7 @@ function killBusiness(biz, refundPct, why) {
   S.stats.failed++;
   S.lastFailDay = S.day;
   var gain = Math.floor(S.subs * (0.15 + Math.random() * 0.2) * charismaMul()) + Math.floor(biz.cost / 2000);
-  S.subs += gain;
+  addSubs(gain);
   addXp(40);
   addLog('ПРОВАЛ: «' + biz.name + '» свёрнут. ' + (why || ''), C.red);
   addLog('Серия про провал залетела: +' + fmtNum(gain) + ' подписчиков' + (refund > 0 ? ', возврат ' + fmtMoney(refund) : ''), C.yellow);
@@ -398,31 +402,44 @@ function investBiz(biz) {
   sfx(sndCash);
 }
 
-// Видео: бюджет 100-500 тыс. P шагами по 50 тыс.
-// Каждый шаг даёт 25 000..100 000 подписчиков (итого 50 тыс..1 млн), максимум 4 видео в месяц.
+// Потолок аудитории — 2 млн (как у реального блогера во всех соцсетях).
+var SUBS_CAP = 2000000;
+function addSubs(n) {
+  S.subs += n;
+  if (S.subs > SUBS_CAP) S.subs = SUBS_CAP;
+  if (S.subs < 0) S.subs = 0;
+}
+// Подписчики растут равномерно сами, видео на это не влияет.
+// Рост замедляется у потолка (логистическая кривая), чтобы экономика не взрывалась.
+function subsPerDay() {
+  var base = (S.subs * 0.03 + 100) * Math.max(0, 1 - S.subs / SUBS_CAP);
+  return Math.floor(base * charismaMul());
+}
+// Цена видео — данность, растёт с аудиторией: 100 тыс. при <=50 тыс. подписчиков,
+// 500 тыс. при >=1 млн. Шаги по 50 тыс.
+function videoPrice() {
+  var t = (S.subs - 50000) / 950000;
+  if (t < 0) t = 0;
+  if (t > 1) t = 1;
+  return 100000 + Math.floor(t * 8 + 0.000001) * 50000;
+}
+// Видео — дорогой ритуал блогера: не прибавляет подписчиков, максимум 4 в месяц.
 function videosLeft() {
   var m = Math.floor((S.day - 1) / 30);
   if (S.videoMonth !== m) return 4;
   return Math.max(0, 4 - (S.videoCount || 0));
 }
-function makeVideo(budget) {
-  budget = Math.max(100000, Math.min(500000, Math.round(budget / 50000) * 50000));
+function makeVideo() {
+  var price = videoPrice();
   var month = Math.floor((S.day - 1) / 30);
   if (S.videoMonth !== month) { S.videoMonth = month; S.videoCount = 0; }
-  if (S.videoCount >= 4 || S.money < budget) return;
+  if (S.videoCount >= 4 || S.money < price) return;
   S.videoCount++;
-  S.money -= budget;
-  var steps = budget / 50000;
-  var gain = 0;
-  for (var i = 0; i < steps; i++) gain += random(25000, 100000);
-  gain = Math.min(1000000, Math.floor(gain * charismaMul()));
-  S.subs += gain;
+  S.money -= price;
   S.stats.videos++;
   addXp(5);
-  addLog('Видео за ' + fmtMoney(budget) + ': +' + fmtNum(gain) + ' подписчиков', C.green);
-  toast('+' + fmtNum(gain) + ' подписчиков!', C.green);
+  addLog('Снял видео за ' + fmtMoney(price) + '. Подписчики растут сами — видео лишь ритуал.', C.dim);
   sfx(sndCash);
-  checkAchieves();
 }
 
 function loanMax(bank) { return bank.maxBase * S.level; }
@@ -521,7 +538,7 @@ function drawLeftPanel() {
   if (btn(20, by, 216, 44, 'ОТКРЫТЬ БИЗНЕС', { size: 9, disabled: S.businesses.length >= maxBizSlots() })) S.modal = { kind: 'catalog' };
   by += 52;
   var leftV = videosLeft();
-  if (btn(20, by, 216, 44, 'СНЯТЬ ВИДЕО (' + leftV + '/4)', { size: 9, disabled: leftV <= 0 })) S.modal = { kind: 'video' };
+  if (btn(20, by, 216, 44, 'ВИДЕО ' + Math.round(videoPrice() / 1000) + 'К (' + leftV + '/4)', { size: 9, disabled: leftV <= 0 })) S.modal = { kind: 'video' };
   by += 52;
   if (btn(20, by, 216, 44, 'БАНКИ', { size: 9 })) S.modal = { kind: 'bank' };
   by += 52;
@@ -529,13 +546,15 @@ function drawLeftPanel() {
   by += 52;
   if (btn(20, by, 216, 36, 'В МЕНЮ', { size: 8, bg: '#23263a' })) { saveGame(); game.setLoop('menu'); }
   // статистика
-  var upkeepNow = S.todayUpkeep || (1500 + Math.floor(S.subs * 0.01));
+  var upkeepNow = S.todayUpkeep || (1000 + Math.floor(S.subs * 0.005));
+  var subsGainNow = S.todaySubs || subsPerDay();
   txt('Блог: +' + fmtMoney(S.todayAd) + '/день', 24, by + 54, 8, C.yellow);
-  txt('Жизнь: -' + fmtMoney(upkeepNow) + '/день', 24, by + 70, 8, C.red);
-  txt('Открыто бизнесов: ' + S.stats.opened, 24, by + 86, 8, C.dim);
-  txt('Провалов: ' + S.stats.failed, 24, by + 102, 8, C.dim);
-  txt('Роликов: ' + S.stats.videos, 24, by + 118, 8, C.dim);
-  txt('Макс. денег: ' + fmtMoney(S.stats.maxMoney), 24, by + 134, 8, C.dim);
+  txt('Подп: +' + fmtNum(subsGainNow) + '/день', 24, by + 70, 8, C.blue);
+  txt('Жизнь: -' + fmtMoney(upkeepNow) + '/день', 24, by + 86, 8, C.red);
+  txt('Открыто бизнесов: ' + S.stats.opened, 24, by + 102, 8, C.dim);
+  txt('Провалов: ' + S.stats.failed, 24, by + 118, 8, C.dim);
+  txt('Роликов: ' + S.stats.videos, 24, by + 134, 8, C.dim);
+  txt('Макс. денег: ' + fmtMoney(S.stats.maxMoney), 24, by + 150, 8, C.dim);
   // переключатели музыки и звуков (внизу панели)
   var sy = H - 50;
   if (btn(20, sy, 104, 32, 'МУЗ ' + (SETTINGS.music ? 'ВКЛ' : 'ВЫКЛ'), { size: 7, align: 'c', bg: SETTINGS.music ? '#2c4a2e' : '#23263a', border: SETTINGS.music ? C.green : C.border })) toggleMusic();
@@ -788,26 +807,23 @@ function drawModalVideo() {
   var m = drawModalBase(Math.min(620, W - 40), Math.min(430, H - 40), 'СЪЁМКА ВИДЕО');
   if (modalCloseBtn(m)) { S.modal = null; return; }
   var left = videosLeft();
-  txt('Деньги на продакшн — подписчики на выходе.', m.x + 24, m.y + 52, 8, C.dim);
-  txt('Не больше 4 видео в месяц.', m.x + 24, m.y + 68, 8, C.dim);
-  txt('Осталось в этом месяце: ' + left + '/4', m.x + 24, m.y + 92, 9, left > 0 ? C.green : C.red);
-  txt('Деньги: ' + fmtMoney(S.money), m.x + m.w - 24, m.y + 92, 9, C.dim, 'r');
-  // бюджет
-  txt('БЮДЖЕТ', m.x + 24, m.y + 128, 8, C.dim);
-  txt(fmtMoney(S.videoBudget), m.x + m.w / 2, m.y + 146, 16, C.yellow, 'c');
-  if (btn(m.x + 24, m.y + 138, 56, 34, '-50', { align: 'c', size: 9, disabled: S.videoBudget <= 100000 })) S.videoBudget = Math.max(100000, S.videoBudget - 50000);
-  if (btn(m.x + m.w - 80, m.y + 138, 56, 34, '+50', { align: 'c', size: 9, disabled: S.videoBudget >= 500000 })) S.videoBudget = Math.min(500000, S.videoBudget + 50000);
-  var steps = S.videoBudget / 50000;
-  var minG = Math.floor(steps * 25000 * charismaMul());
-  var maxG = Math.min(1000000, Math.floor(steps * 100000 * charismaMul()));
-  txt('Рост: ' + fmtNum(minG) + ' - ' + fmtNum(maxG) + ' подписчиков', m.x + m.w / 2, m.y + 194, 9, C.blue, 'c');
-  txt('Шаг 50 000 P = 25 000..100 000 подписчиков', m.x + m.w / 2, m.y + 214, 8, C.dim, 'c');
+  var price = videoPrice();
+  txt('Подписчики растут сами, вне зависимости от видео.', m.x + 24, m.y + 52, 8, C.text);
+  txt('Ролик — дорогой ритуал блогера. Цена — данность:', m.x + 24, m.y + 68, 8, C.dim);
+  txt('100 тыс. при 50 тыс. подписчиков, 500 тыс. при 1 млн.', m.x + 24, m.y + 84, 8, C.dim);
+  txt('Осталось в этом месяце: ' + left + '/4', m.x + 24, m.y + 112, 9, left > 0 ? C.green : C.red);
+  txt('Подписчиков: ' + fmtNum(S.subs) + '  (+' + fmtNum(subsPerDay()) + '/день)', m.x + m.w - 24, m.y + 112, 8, C.blue, 'r');
+  // цена
+  txt('ЦЕНА ВИДЕО', m.x + m.w / 2, m.y + 144, 8, C.dim, 'c');
+  txt(fmtMoney(price), m.x + m.w / 2, m.y + 164, 16, C.yellow, 'c');
   var adNow = Math.floor(S.subs * 0.012 * (1 + 0.08 * S.skills.charisma));
-  txt('Реклама в блоге сейчас: +' + fmtMoney(adNow) + '/день', m.x + m.w / 2, m.y + 238, 8, C.dim, 'c');
-  var can = left > 0 && S.money >= S.videoBudget;
-  if (btn(m.x + 40, m.y + 268, m.w - 80, 48, 'СНЯТЬ ЗА ' + fmtMoney(S.videoBudget), { size: 10, align: 'c', disabled: !can, bg: '#2c4a2e', border: C.green, hover: '#3c6a3e' })) makeVideo(S.videoBudget);
-  if (left <= 0) txt('Лимит видео на месяц исчерпан.', m.x + m.w / 2, m.y + 332, 8, C.red, 'c');
-  else if (S.money < S.videoBudget) txt('Не хватает денег на такой бюджет.', m.x + m.w / 2, m.y + 332, 8, C.red, 'c');
+  var upNow = 1000 + Math.floor(S.subs * 0.005);
+  txt('Реклама: +' + fmtMoney(adNow) + '/день   Жизнь: -' + fmtMoney(upNow) + '/день', m.x + m.w / 2, m.y + 194, 8, C.dim, 'c');
+  var can = left > 0 && S.money >= price;
+  if (btn(m.x + 40, m.y + 226, m.w - 80, 48, 'СНЯТЬ ЗА ' + fmtMoney(price), { size: 10, align: 'c', disabled: !can, bg: '#2c4a2e', border: C.green, hover: '#3c6a3e' })) makeVideo();
+  if (left <= 0) txt('Лимит видео на месяц исчерпан.', m.x + m.w / 2, m.y + 290, 8, C.red, 'c');
+  else if (S.money < price) txt('Не хватает денег на съёмку.', m.x + m.w / 2, m.y + 290, 8, C.red, 'c');
+  else txt('Деньги: ' + fmtMoney(S.money), m.x + m.w / 2, m.y + 290, 8, C.dim, 'c');
 }
 
 function drawModalHelp() {
@@ -822,8 +838,9 @@ function drawModalHelp() {
     '  франшизодатели и проверки. Провал неизбежен!',
     '* Провалы = контент: серия про факап приносит',
     '  подписчиков, а блог — рекламный доход.',
-    '* Видео стоит 100-500 тыс. P, даёт 50 тыс.-1 млн',
-    '  подписчиков. Максимум 4 видео в месяц.',
+    '* Подписчики растут сами, видео на это не влияет.',
+    '* Видео — платный ритуал: 100-500 тыс. P, цена',
+    '  растёт вместе с аудиторией. Максимум 4 в месяц.',
     '* Жизнь тоже стоит денег: ежедневные личные расходы.',
     '* Кредиты Т-Банка и Альфа-Банка спасут... или утопят.',
     '* Качай уровни и навыки: переговоры, маркетинг,',

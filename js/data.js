@@ -204,7 +204,7 @@ var EVENTS = [
         go: function (S, biz) {
           S.money -= 30000;
           var gain = Math.floor(S.subs * 0.08) + 500;
-          S.subs += gain;
+          addSubs(gain);
           return 'Пост-разоблачение: -30 000 ₽, +' + fmtNum(gain) + ' подписчиков';
         }
       }
@@ -286,7 +286,7 @@ var EVENTS = [
         t: 'Красавчик', d: '+подписчики',
         go: function (S, biz) {
           var gain = Math.floor(S.subs * (0.15 + Math.random() * 0.1)) + 1000;
-          S.subs += gain; S.lastViral = S.day;
+          addSubs(gain); S.lastViral = S.day;
           return 'Вирусный ролик: +' + fmtNum(gain) + ' подписчиков';
         }
       }
