@@ -23,6 +23,8 @@ var WH = game.getWH();
 var W = WH.w, H = WH.h;
 function syncSize() { WH = game.getWH(); W = WH.w; H = WH.h; }
 
+var GAME_VERSION = '1.3';
+
 var FONT = '"Press Start 2P", monospace';
 var SAVE_KEY = 'iden_save_v1';
 
@@ -907,7 +909,7 @@ game.newLoop('menu', function () {
   if (btn(W / 2 + 10, ty, 180, 36, 'ЗВУКИ: ' + (SETTINGS.sfx ? 'ВКЛ' : 'ВЫКЛ'), { size: 8, align: 'c', bg: SETTINGS.sfx ? '#2c4a2e' : '#23263a', border: SETTINGS.sfx ? C.green : C.border })) toggleSfx();
   var fy = Math.max(H - 56, ty + 46);
   txt('фанатская игра про блогера АЙДЕНа. все совпадения случайны :)', W / 2, fy, 8, C.dim, 'c');
-  txt('сделано на PointJS', W / 2, fy + 24, 8, C.dim, 'c');
+  txt('v' + GAME_VERSION + ' · сделано на PointJS', W / 2, fy + 24, 8, C.dim, 'c');
   mouse.setStandardCursor(hoverAny ? 'pointer' : 'default');
 });
 
