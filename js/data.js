@@ -4,70 +4,73 @@
 // ============================================================
 
 // ---------- Каталог бизнесов (по реальным видео АЙДЕНа) ----------
+// Экономика нарочно убыточная: в среднем расходы выше выручки.
+// Хорошие дни бывают (максимум выручки выше расходов), но редко,
+// а навыки лишь сокращают убытки. Так и задумано.
 var BIZ_TYPES = [
   {
     id: 'tulips', name: 'Тюльпаны оптом', icon: 'resources/biz_tulips.png',
-    cost: 25000, incMin: 1500, incMax: 4500, expense: 2200, risk: 0.35,
+    cost: 25000, incMin: 1200, incMax: 4200, expense: 2800, risk: 0.35,
     desc: 'Купил оптом — продал на Авито. Классика к 8 марта.'
   },
   {
     id: 'iphone', name: 'Перекуп айфонов', icon: 'resources/biz_iphone.png',
-    cost: 80000, incMin: 4000, incMax: 11000, expense: 6500, risk: 0.30,
+    cost: 80000, incMin: 4000, incMax: 10000, expense: 7800, risk: 0.30,
     desc: 'IDen Store: б/у техника Apple. Купил дешевле, продал дороже.'
   },
   {
     id: 'crypto', name: 'Мемкоин MIRINCOIN', icon: 'resources/biz_crypto.png',
-    cost: 100000, incMin: -15000, incMax: 45000, expense: 500, risk: 0.90,
+    cost: 100000, incMin: -20000, incMax: 20000, expense: 1200, risk: 0.90,
     desc: 'Создал по приколу ночью. Криптокиты уже пампят.'
   },
   {
     id: 'water', name: 'Водомат', icon: 'resources/biz_water.png',
-    cost: 200000, incMin: 3000, incMax: 8000, expense: 4200, risk: 0.30,
+    cost: 200000, incMin: 3200, incMax: 8500, expense: 6200, risk: 0.30,
     desc: '«Я купил ВОДОМАТ!» Вода. Из автомата. Гениально.'
   },
   {
     id: 'pc', name: 'Сборка ПК на заказ', icon: 'resources/biz_pc.png',
-    cost: 300000, incMin: 7000, incMax: 16000, expense: 9500, risk: 0.35,
+    cost: 300000, incMin: 7000, incMax: 16000, expense: 13000, risk: 0.35,
     desc: 'КОМПЫ - поперли! RGB-монстры для школьников.'
   },
   {
     id: 'ozon', name: 'ПВЗ Ozon', icon: 'resources/biz_ozon.png',
-    cost: 350000, incMin: 8000, incMax: 15000, expense: 11000, risk: 0.45,
+    cost: 350000, incMin: 8000, incMax: 17000, expense: 14500, risk: 0.45,
     desc: 'Пункт выдачи заказов. «Я открыл ПВЗ - где деньги?»'
   },
   {
     id: 'wb', name: 'ПВЗ Wildberries', icon: 'resources/biz_wb.png',
-    cost: 350000, incMin: 8000, incMax: 15000, expense: 11500, risk: 0.45,
+    cost: 350000, incMin: 8000, incMax: 17000, expense: 15000, risk: 0.45,
     desc: '30 дней владею ПВЗ WB. Спойлер: денег нет.'
   },
   {
     id: 'repair', name: 'Сервисный центр', icon: 'resources/biz_repair.png',
-    cost: 450000, incMin: 10000, incMax: 22000, expense: 14000, risk: 0.40,
+    cost: 450000, incMin: 9000, incMax: 22000, expense: 17500, risk: 0.40,
     desc: 'Ремонт ПК с нуля. Первые клиенты и проблемы.'
   },
   {
     id: 'toilet', name: 'Биотуалеты', icon: 'resources/biz_toilet.png',
-    cost: 500000, incMin: 9000, incMax: 20000, expense: 12500, risk: 0.40,
+    cost: 500000, incMin: 9000, incMax: 21000, expense: 17000, risk: 0.40,
     desc: 'Золото там, куда никто не смотрит. Прокат кабинок.'
   },
   {
     id: 'podcast', name: 'Студия подкастов', icon: 'resources/biz_podcast.png',
-    cost: 600000, incMin: 9000, incMax: 24000, expense: 15500, risk: 0.45,
+    cost: 600000, incMin: 9000, incMax: 24000, expense: 19000, risk: 0.45,
     desc: '«Бизнес в минус - что делать со студией подкастов?»'
   },
   {
     id: 'coffee', name: 'Кофейня «Миренкофе»', icon: 'resources/biz_coffee.png',
-    cost: 900000, incMin: 22000, incMax: 38000, expense: 27500, risk: 0.55,
+    cost: 900000, incMin: 20000, incMax: 42000, expense: 40000, risk: 0.55,
     desc: 'Флагман на Тележной. Ремонт уже съел 8 млн.'
   },
   {
     id: 'cars', name: 'Прокат авто', icon: 'resources/biz_cars.png',
-    cost: 1500000, incMin: 35000, incMax: 75000, expense: 52000, risk: 0.60,
+    cost: 1500000, incMin: 32000, incMax: 75000, expense: 72000, risk: 0.60,
     desc: 'Машина мечты Лисян. Точнее, целый прокат машин.'
   },
   {
     id: 'pizza', name: 'Франшиза пиццерии', icon: 'resources/biz_pizza.png',
-    cost: 2000000, incMin: 48000, incMax: 90000, expense: 66000, risk: 0.70,
+    cost: 2000000, incMin: 40000, incMax: 90000, expense: 85000, risk: 0.70,
     desc: 'Паушальный взнос, роялти... Что может пойти не так?'
   }
 ];
